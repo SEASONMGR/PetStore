@@ -1,0 +1,66 @@
+# ============================================================
+# PetStore 宠物商店 CMS —— 应用配置
+# 课程实验一：Spring Boot + Spring MVC + MyBatis Plus，数据库用 H2 内存库
+# ============================================================
+server:
+  port: 8080
+
+spring:
+  application:
+    name: PetStore
+
+  # ---------- 数据源：H2 内存库（MySQL 兼容模式） ----------
+  # 注意：内存库随进程启动/销毁，每次启动都会重新执行 schema.sql + data.sql。
+  # 本实验不接 MySQL；如需换库请另行评估，勿直接改这里的 url。
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:petstore;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+
+  # ---------- 建表与初始化数据 ----------
+  # schema.sql：建表 + 外键 + 索引；data.sql：内置演示数据。执行顺序由 Spring Boot 保证先 schema 后 data。
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      encoding: UTF-8
+
+  # ---------- H2 Web 控制台（仅开发调试用，生产必须关闭） ----------
+  # 开发访问：http://localhost:8080/h2-console
+  #   JDBC URL：jdbc:h2:mem:petstore;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+  #   用户名：sa      密码：空
+  # 生产禁用：把 spring.h2.console.enabled 置为 false（或换成其他 profile）。
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+
+  # 避开 H2 保留字/大小写问题：按 schema.sql 的列名严格映射
+  jackson:
+    default-property-inclusion: non_null
+
+# ---------- MyBatis Plus ----------
+mybatis-plus:
+  # 实体与表名的映射策略：schema.sql 全小写表名
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      table-underline: true
+  configuration:
+    # 下划线列名 → 驼峰属性名（account_id → accountId）
+    map-underscore-to-camel-case: true
+    # 开发期打印 SQL，便于课程实验观察 MyBatis Plus 生成的语句
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    org.example.petstore: DEBUG

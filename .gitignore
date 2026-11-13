@@ -1,0 +1,49 @@
+# ============================================================
+# t1 工作区根级忽略规则（仓库根 = 项目/JavaWeb/t1）
+# 维护者：rel-01-交付成员 ｜ 任务：T-20261113-04
+# 说明：本文件位于仓库根，规则对整棵工作树（含 PetStore/ 子目录）生效。
+#       PetStore/.gitignore 是 Spring Initializr 生成的子目录级规则，
+#       保持原样、不予删除；两者叠加生效，冲突时以"更靠近文件的那条"为准。
+# ============================================================
+
+# ---------- 构建输出（Maven / Gradle / IDE）----------
+target/
+build/
+out/
+bin/
+*.class
+
+# ---------- IDE 元数据（默认整体忽略，属用户本地状态）----------
+# 根级 .idea/ 里的 modules.xml / t1.iml / workspace.xml 都随本地环境变化
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+# ---------- Maven Wrapper 的可执行 jar（由 mvnw 自行下载，不入库）----------
+.mvn/wrapper/maven-wrapper.jar
+
+# ---------- Office 临时锁文件（Word/Excel 打开文档时生成，形如 ~$xxx.doc）----------
+~$*
+*.tmp
+~*.tmp
+
+# ---------- 日志与操作系统杂项 ----------
+*.log
+logs/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 其他本地状态 ----------
+*.hprof
+.flattened-pom.xml
+.mvn/timing.properties
+
+# ---------- 显式保留：实验过程材料需入库 ----------
+# 《软件开发架构平台》实验指导书*.doc —— 课程材料，纳入版本控制，
+# 仅排除其 ~$ 锁文件（见上方规则），故此处不做反向忽略。
