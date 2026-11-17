@@ -1,0 +1,33 @@
+# ============================================================
+# PetStore —— MySQL 5.7 profile
+# 启用方式：mvnw.cmd -B spring-boot:run "-Dspring-boot.run.profiles=mysql"
+# 或 IDEA：Active profiles 填 mysql
+# 回退：去掉 profile 即回到 H2（application.yaml 默认配置未被破坏）
+# ============================================================
+spring:
+  config:
+    activate:
+      on-profile: mysql
+
+  datasource:
+    # 服务器默认字符集实测为 latin1（@@character_set_server），
+    # 必须显式 characterEncoding=utf8，否则中文乱码（存储对、显示乱）。
+    url: jdbc:mysql://localhost:3306/petstore?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    # 密码只从环境变量注入，绝不写进本文件（本文件会入库）。
+    # 留空的默认值故意让"忘记设环境变量"时连接失败，而不是静默用错密码。
+    # 启动前在终端设置：$env:PETSTORE_DB_PASSWORD='<密码>'
+    password: ${PETSTORE_DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # MySQL 下关闭 spring.sql.init：schema.sql/data.sql 由用户用 mysql.exe 手工导入
+  # （原因：schema.sql 含 DROP TABLE，每次启动重建会清空数据；且 MySQL 建表需指定
+  #  utf8mb4 库，交给 create-database.sql + 命令行导入更可控）
+  sql:
+    init:
+      mode: never
+
+  # MySQL profile 下不启用 H2 控制台（H2 不在连接链路上）
+  h2:
+    console:
+      enabled: false
