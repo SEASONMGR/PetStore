@@ -46,7 +46,19 @@
             <version>${mybatis-plus.version}</version>
         </dependency>
 
-        <!-- 数据库：本实验使用 H2 内存库（不接 MySQL） -->
+        <!-- 数据库驱动
+             默认 profile：H2 内存库（保证离线 mvnw test 可跑，可随时回退）
+             mysql profile：MySQL 5.7
+             驱动坐标用 com.mysql:mysql-connector-j（MySQL 官方新坐标，替代已停更的
+             mysql:mysql-connector-java）。版本 8.0.33：对 5.7 服务器 + mysql_native_password
+             的兼容性验证最充分；8.4.x 起默认行为有调整，课程环境无必要冒险。
+             scope=runtime，与 H2 保持一致。 -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.0.33</version>
+            <scope>runtime</scope>
+        </dependency>
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>

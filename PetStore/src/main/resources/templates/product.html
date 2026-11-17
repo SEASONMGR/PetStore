@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图名：product（商品详情）  路由：GET /product/{productId}
+  Controller：ProductController.viewProduct（model: product、items）
+  product —— org.example.petstore.entity.Product：
+             id / productid / categoryId / name / description / imagePath / listPrice / status
+  items   —— List<Item>：
+             id / itemid / productId / name / description / listPrice / unitCost / quantity / status / imagePath
+  注意：
+    1) imagePath 已是完整路径，用 @{${product.imagePath}} 引用；
+    2) unitCost（成本价）属内部数据，不在用户端展示；
+    3) status 取值 INSTOCK / OUTOFSTOCK / DISCONTINUED，页面映射为中文。
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 商品详情')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <!-- 面包屑 -->
+    <nav class="breadcrumb" aria-label="面包屑导航">
+        <a th:href="@{/catalog}">分类总览</a>
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <a th:if="${product != null}"
+           th:href="@{/catalog/{id}(id=${product.categoryId})}">返回所属分类</a>
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <span class="breadcrumb__current"
+              th:text="${product != null} ? ${product.name} : '商品详情'">商品详情</span>
+    </nav>
+
+    <article class="detail" th:if="${product != null}">
+        <figure class="detail__figure">
+            <img class="detail__img"
+                 th:src="@{${product.imagePath}}"
+                 th:alt="${product.name}">
+        </figure>
+
+        <div class="detail__info">
+            <h1 class="page-title" th:text="${product.name}">商品名称</h1>
+            <p class="detail__descn" th:text="${product.description}">商品描述</p>
+
+            <!-- 规格选择：由 items 的 name / listPrice 生成下拉 -->
+            <div class="detail__spec">
+                <label class="field-label" for="spec-select">选择规格</label>
+                <select id="spec-select" class="field-select"
+                        th:if="${items != null and !#lists.isEmpty(items)}">
+                    <option th:each="item : ${items}"
+                            th:value="${item.id}"
+                            th:text="${item.name + '　￥' + #numbers.formatDecimal(item.listPrice, 1, 2)}">规格</option>
+                </select>
+                <p class="detail__spec-empty"
+                   th:if="${items == null or #lists.isEmpty(items)}">暂无可选规格。</p>
+            </div>
+
+            <!-- 加入购物车：功能未实现，按钮必须 disabled，并显式标注 -->
+            <div class="detail__buy">
+                <button type="button"
+                        class="btn btn--primary"
+                        disabled
+                        aria-disabled="true"
+                        title="购物车功能待实现">
+                    加入购物车
+                </button>
+                <span class="detail__buy-note">购物车功能待实现</span>
+            </div>
+        </div>
+    </article>
+
+    <p class="empty-hint" th:if="${product == null}">
+        商品不存在或已被移除。<a th:href="@{/catalog}">返回分类总览</a>
+    </p>
+
+    <!-- 规格明细表 -->
+    <section class="spec-section"
+             th:if="${items != null and !#lists.isEmpty(items)}">
+        <h2 class="section-title">规格与价格</h2>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <caption class="visually-hidden">该商品的全部规格、单价、库存与状态</caption>
+                <thead>
+                <tr>
+                    <th scope="col">规格</th>
+                    <th scope="col">编号</th>
+                    <th scope="col">说明</th>
+                    <th scope="col">单价（元）</th>
+                    <th scope="col">库存</th>
+                    <th scope="col">状态</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${items}">
+                    <th scope="row" th:text="${item.name}">规格</th>
+                    <td class="mono" th:text="${item.itemid}">编号</td>
+                    <td th:text="${item.description}">说明</td>
+                    <td class="num" th:text="${'￥' + #numbers.formatDecimal(item.listPrice, 1, 2)}">￥0.00</td>
+                    <td class="num" th:text="${item.quantity}">0</td>
+                    <td th:text="${item.status == 'INSTOCK' ? '有货' : (item.status == 'OUTOFSTOCK' ? '缺货' : (item.status == 'DISCONTINUED' ? '已下架' : item.status))}">状态</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="spec-section__note">以上价格为教学演示数据；下单与支付流程尚未实现。</p>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>

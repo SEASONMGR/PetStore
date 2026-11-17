@@ -1,6 +1,12 @@
 # ============================================================
-# PetStore 宠物商店 CMS —— 应用配置
-# 课程实验一：Spring Boot + Spring MVC + MyBatis Plus，数据库用 H2 内存库
+# PetStore 宠物商店 CMS —— 应用配置（默认 profile = H2）
+# 课程实验一：Spring Boot + Spring MVC + MyBatis Plus
+#
+# 数据库 profile 切换（两套并存，互不破坏）：
+#   - 默认（不指定 profile）→ H2 内存库，mvnw test 离线可跑，零外部依赖
+#   - mysql profile         → MySQL 5.7，见 application-mysql.yaml
+#     启动：mvnw.cmd -B spring-boot:run "-Dspring-boot.run.profiles=mysql"
+#   - 回退：不指定 profile 即回到 H2，无需改任何文件
 # ============================================================
 server:
   port: 8080
@@ -9,17 +15,18 @@ spring:
   application:
     name: PetStore
 
-  # ---------- 数据源：H2 内存库（MySQL 兼容模式） ----------
+  # ---------- 数据源：H2 内存库（MySQL 兼容模式）—— 默认 profile ----------
   # 注意：内存库随进程启动/销毁，每次启动都会重新执行 schema.sql + data.sql。
-  # 本实验不接 MySQL；如需换库请另行评估，勿直接改这里的 url。
+  # 这是"可回退基线"：MySQL 侧出任何问题，不加 profile 启动即可复原。
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:petstore;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
     password: ""
 
-  # ---------- 建表与初始化数据 ----------
+  # ---------- 建表与初始化数据（默认 profile / H2） ----------
   # schema.sql：建表 + 外键 + 索引；data.sql：内置演示数据。执行顺序由 Spring Boot 保证先 schema 后 data。
+  # MySQL profile 下由 spring.sql.init.mode=never 关闭，改用 db/create-database.sql + 手工导入。
   sql:
     init:
       mode: always

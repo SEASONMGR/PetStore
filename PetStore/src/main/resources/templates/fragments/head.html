@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  公共片段：页面 <head>
+  用法：<head th:replace="~{fragments/head :: head('宠物商店 · 分类总览')}"></head>
+  参数：pageTitle —— 完整页面标题字符串
+-->
+<head th:fragment="head(pageTitle)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${pageTitle}">宠物商店</title>
+    <link rel="stylesheet" th:href="@{/css/petstore.css}">
+</head>
+<body>
+<!-- 本文件仅提供 head 片段，无独立页面内容 -->
+</body>
+</html>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  公共片段：站点页脚
+  用法：<footer th:replace="~{fragments/footer :: footer}"></footer>
+-->
+<body>
+<footer th:fragment="footer" class="site-footer">
+    <div class="container">
+        <p class="footer-line">宠物商店 PetStore · 课程实验项目（Spring Boot + Spring MVC + Thymeleaf）</p>
+        <p class="footer-line footer-meta">
+            本站为教学演示：购物车与下单功能尚未实现，页面上的相关按钮均不可用。
+            <a th:href="@{/catalog}">返回分类总览</a>
+        </p>
+    </div>
+</footer>
+</body>
+</html>

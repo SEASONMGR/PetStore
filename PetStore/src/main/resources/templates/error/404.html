@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图：error/404 —— 资源未找到
+  Spring Boot 的 BasicErrorController 会提供 status / error / message / path / timestamp 等属性；
+  本页对全部属性做了空值兜底，直接访问也不会因 null 而报错。
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 页面未找到')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <section class="error-box">
+        <p class="error-code" th:text="${status} ?: 404">404</p>
+        <h1 class="page-title">页面未找到</h1>
+        <p class="page-lead">
+            你访问的地址不存在，或者相关商品/分类已被移除。
+        </p>
+        <ul class="error-meta">
+            <li>
+                <span class="error-meta__key">请求路径</span>
+                <code class="error-meta__val" th:text="${path} ?: '（未知）'">（未知）</code>
+            </li>
+            <li>
+                <span class="error-meta__key">错误信息</span>
+                <code class="error-meta__val" th:text="${#strings.isEmpty(message) ? (#strings.isEmpty(error) ? '（无附加信息）' : error) : message}">（无附加信息）</code>
+            </li>
+        </ul>
+        <p class="error-actions">
+            <a class="btn btn--primary" th:href="@{/catalog}">返回分类总览</a>
+        </p>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>
