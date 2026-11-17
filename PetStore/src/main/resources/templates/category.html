@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图名：category（某分类下的商品列表）  路由：GET /catalog/{categoryId}
+  Controller：ProductController.listProductsByCategory（model: category、products）
+  category —— org.example.petstore.entity.Category：id / catid / name / description / sortOrder
+  products —— List<Product>：id / productid / categoryId / name / description / imagePath / listPrice
+  注意：imagePath 已是完整路径（如 /images/products/dog-golden.png），故用 @{${p.imagePath}} 直接引用。
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 商品列表')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <!-- 面包屑 -->
+    <nav class="breadcrumb" aria-label="面包屑导航">
+        <a th:href="@{/catalog}">分类总览</a>
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <span class="breadcrumb__current" th:text="${category != null} ? ${category.name} : '未知分类'">分类名称</span>
+    </nav>
+
+    <div class="page-head">
+        <h1 class="page-title" th:text="${category != null} ? ${category.name} : '商品列表'">商品列表</h1>
+        <p class="page-lead" th:text="${category != null} ? ${category.description} : ''">分类描述</p>
+    </div>
+
+    <!-- 商品卡片网格 -->
+    <ul class="product-grid"
+        th:if="${products != null and !#lists.isEmpty(products)}">
+        <li class="product-card" th:each="p : ${products}">
+            <figure class="product-card__figure">
+                <img class="product-card__img"
+                     th:src="@{${p.imagePath}}"
+                     th:alt="${p.name}"
+                     loading="lazy">
+            </figure>
+            <div class="product-card__body">
+                <h2 class="product-card__name" th:text="${p.name}">商品名称</h2>
+                <p class="product-card__descn" th:text="${p.description}">商品描述</p>
+            </div>
+            <div class="product-card__foot">
+                <a class="btn btn--primary"
+                   th:href="@{/product/{id}(id=${p.id})}">查看详情</a>
+            </div>
+        </li>
+    </ul>
+
+    <!-- 空态 -->
+    <p class="empty-hint" th:if="${products == null or #lists.isEmpty(products)}">
+        该分类下暂时没有商品。
+        <a th:href="@{/catalog}">返回分类总览</a>
+    </p>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>

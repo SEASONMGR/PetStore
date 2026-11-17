@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  公共片段：站点页头 + 顶部导航
+  用法：<header th:replace="~{fragments/header :: header}"></header>
+  导航高亮由 /js/petstore.js 依据 data-nav 与当前 URL 自动处理，不依赖后端传参。
+
+  登录态（契约 §2.3）：session 键 `loginUser`，值类型 Account；Controller 在写入前已把
+  password 置为 null。本片段按契约键名直接读取，不依赖后端额外传参。
+  `${session == null or ...}` 的短路写法用于兼容 error/404 由 BasicErrorController 渲染、
+  乃至无会话的极端情况，避免在 null 上取属性。
+-->
+<body>
+<header th:fragment="header" class="site-header">
+    <div class="container header-inner">
+        <a class="brand" th:href="@{/catalog}">
+            <span class="brand-mark" aria-hidden="true">🐾</span>
+            <span class="brand-text">宠物商店</span>
+        </a>
+        <nav class="site-nav" aria-label="主导航">
+            <!-- 首页即分类总览（门店首页），暂无独立 index 视图 -->
+            <a class="nav-link" th:href="@{/catalog}" data-nav="catalog">首页</a>
+            <a class="nav-link" th:href="@{/catalog}" data-nav="category">分类</a>
+            <!-- 购物车未实现：仅占位，禁用且明确标注 -->
+            <span class="nav-link nav-link--disabled"
+                  aria-disabled="true"
+                  title="购物车功能待实现">
+                购物车（待实现）
+            </span>
+
+            <span class="nav-divider" aria-hidden="true"></span>
+
+            <!-- 未登录：登录 / 注册入口。故意不加 data-nav，免得被 petstore.js 的高亮逻辑
+                 套到 /account/* 路径上（该 JS 不在本卡清单内，不能改） -->
+            <a class="nav-link nav-link--auth"
+               th:if="${session == null or session.loginUser == null}"
+               th:href="@{/account/login}">登录</a>
+            <a class="nav-link nav-link--auth"
+               th:if="${session == null or session.loginUser == null}"
+               th:href="@{/account/register}">注册</a>
+
+            <!-- 已登录：显示用户名与退出入口 -->
+            <span class="nav-user" th:if="${session != null and session.loginUser != null}">
+                <span class="nav-user__label">你好，</span>
+                <span class="nav-user__name" th:text="${session.loginUser.username}">用户</span>
+                <a class="nav-link nav-link--auth" th:href="@{/account/logout}">退出</a>
+            </span>
+        </nav>
+    </div>
+</header>
+</body>
+</html>

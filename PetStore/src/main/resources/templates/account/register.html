@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图名：account/register  路由：GET /account/register、POST /account/register
+  产出方：AccountController（registerPage / register）
+  契约：项目/docs/接口契约.md §1.6、§2.2、§3.1
+  model：account(Account,非空) 空对象或失败回填；error(String,可空) 失败提示；
+         captchaQuestion(String,**不可空**) 算术题题干
+  请求参数（契约 §2.2，注意 firstName 等是**驼峰**，与列名 first_name 不同）：
+    必填 username / password / email / captcha
+    选填 firstName / lastName / phone / address / city / state / zip / country
+  注意：契约明确 password **不回填**，故密码框不绑定 th:value。
+  验证码：同 login.html，契约 §1.6/§2.2/§2.5，题干 captchaQuestion、参数 captcha(String)、
+          失败文案固定「验证码错误」、答案一次性。
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 注册')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <div class="page-head">
+        <h1 class="page-title">注册</h1>
+        <p class="page-lead">创建账号后即可登录浏览。带 <span class="req-mark">*</span> 的为必填项。</p>
+    </div>
+
+    <section class="auth-card">
+        <!-- 注册失败提示：model.error（契约 §1.6） -->
+        <p class="alert alert--error" th:if="${error != null}" th:text="${error}">用户名、密码、邮箱均为必填项</p>
+
+        <!-- 前端空值提示容器（纯 JS，由页面底部脚本填充） -->
+        <p class="alert alert--error" id="client-error" role="alert" hidden></p>
+
+        <form class="auth-form" id="register-form" method="post"
+              th:action="@{/account/register}" th:object="${account}">
+
+            <div class="field">
+                <label class="field-label" for="username">用户名 <span class="req-mark">*</span></label>
+                <input class="field-input" type="text" id="username" name="username"
+                       th:value="*{username}" placeholder="用于登录，注册后不可重复"
+                       autocomplete="username" required>
+            </div>
+
+            <div class="field">
+                <label class="field-label" for="password">密码 <span class="req-mark">*</span></label>
+                <input class="field-input" type="password" id="password" name="password"
+                       placeholder="请输入密码" autocomplete="new-password" required>
+            </div>
+
+            <div class="field">
+                <label class="field-label" for="email">邮箱 <span class="req-mark">*</span></label>
+                <input class="field-input" type="email" id="email" name="email"
+                       th:value="*{email}" placeholder="name@example.com"
+                       autocomplete="email" required>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label class="field-label" for="lastName">姓</label>
+                    <input class="field-input" type="text" id="lastName" name="lastName"
+                           th:value="*{lastName}" autocomplete="family-name">
+                </div>
+                <div class="field">
+                    <label class="field-label" for="firstName">名</label>
+                    <input class="field-input" type="text" id="firstName" name="firstName"
+                           th:value="*{firstName}" autocomplete="given-name">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="field-label" for="phone">电话</label>
+                <input class="field-input" type="tel" id="phone" name="phone"
+                       th:value="*{phone}" autocomplete="tel">
+            </div>
+
+            <div class="field">
+                <label class="field-label" for="address">地址</label>
+                <input class="field-input" type="text" id="address" name="address"
+                       th:value="*{address}" autocomplete="street-address">
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label class="field-label" for="city">城市</label>
+                    <input class="field-input" type="text" id="city" name="city"
+                           th:value="*{city}" autocomplete="address-level2">
+                </div>
+                <div class="field">
+                    <label class="field-label" for="state">省份</label>
+                    <input class="field-input" type="text" id="state" name="state"
+                           th:value="*{state}" autocomplete="address-level1">
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label class="field-label" for="zip">邮编</label>
+                    <input class="field-input" type="text" id="zip" name="zip"
+                           th:value="*{zip}" autocomplete="postal-code">
+                </div>
+                <div class="field">
+                    <label class="field-label" for="country">国家/地区</label>
+                    <input class="field-input" type="text" id="country" name="country"
+                           th:value="*{country}" autocomplete="country">
+                </div>
+            </div>
+
+            <!-- ===== 验证码（T-20261113-16 接入；契约 §1.6 / §2.2 / §2.5） =====
+                 题干由后端 captchaQuestion 提供；提交参数 name="captcha"（String，**注册为必填**）。
+                 答案为一次性：提交后无论对错即失效，失败回页时会重新生成新题。 -->
+            <fieldset class="captcha-field">
+                <legend class="field-label">验证码 <span class="req-mark">*</span></legend>
+                <div class="captcha-row">
+                    <span class="captcha-question" th:text="${captchaQuestion}">7 + 2 = ?</span>
+                    <input class="field-input captcha-input" type="text" id="captcha" name="captcha"
+                           placeholder="请输入计算结果" inputmode="numeric" autocomplete="off"
+                           aria-describedby="captcha-hint" required>
+                </div>
+                <p class="field-hint" id="captcha-hint">请计算左侧算式并填入结果；每题仅能使用一次。</p>
+            </fieldset>
+
+            <div class="auth-actions">
+                <button class="btn btn--primary" type="submit">提交注册</button>
+                <a class="btn btn--ghost" th:href="@{/account/login}">已有账号，去登录</a>
+            </div>
+        </form>
+
+        <p class="auth-meta">提交后由后端校验用户名与邮箱是否重复（契约 §2.2），本页仅做前端空值校验。</p>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+<!-- 纯 JS 前端校验：只查必填项是否为空，不引任何框架；真正的校验仍以后端为准 -->
+<script>
+    (function () {
+        "use strict";
+        var form = document.getElementById("register-form");
+        var box = document.getElementById("client-error");
+        if (!form || !box) {
+            return;
+        }
+
+        var requiredFields = [
+            ["username", "用户名"],
+            ["password", "密码"],
+            ["email", "邮箱"],
+            ["captcha", "验证码"]
+        ];
+
+        form.addEventListener("submit", function (event) {
+            var missing = [];
+            var firstEmpty = null;
+
+            requiredFields.forEach(function (pair) {
+                var el = form.elements[pair[0]];
+                var value = el && el.value ? el.value.trim() : "";
+                if (!value) {
+                    missing.push(pair[1]);
+                    if (!firstEmpty) {
+                        firstEmpty = el;
+                    }
+                }
+            });
+
+            if (missing.length > 0) {
+                event.preventDefault();
+                box.hidden = false;
+                box.textContent = "请填写必填项：" + missing.join("、");
+                if (firstEmpty) {
+                    firstEmpty.focus();
+                }
+                return;
+            }
+
+            box.hidden = true;
+        });
+    })();
+</script>
+</body>
+</html>

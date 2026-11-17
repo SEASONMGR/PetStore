@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图名：catalog（分类总览 / 门店首页）  路由：GET /catalog
+  Controller：CategoryController.listCategories（model: categories）
+  实体：org.example.petstore.entity.Category
+        id(Integer 主键) / catid(String 业务码) / name / description / sortOrder
+  注意：站内链接用 Integer 主键 id，不要用 catid（"DOGS" 这类业务码，路径变量收的是 Integer）。
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 分类总览')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <div class="page-head">
+        <h1 class="page-title">宠物分类</h1>
+        <p class="page-lead">欢迎光临宠物商店。请先选择一个分类，再浏览该分类下的全部宠物商品。</p>
+    </div>
+
+    <!-- 有数据：渲染分类卡片网格 -->
+    <ul class="category-grid"
+        th:if="${categories != null and !#lists.isEmpty(categories)}">
+        <li class="category-card" th:each="cat : ${categories}">
+            <a class="category-card__link"
+               th:href="@{/catalog/{id}(id=${cat.id})}"
+               th:title="'查看分类：' + ${cat.name}">
+                <span class="category-card__badge" aria-hidden="true">🐾</span>
+                <h2 class="category-card__name" th:text="${cat.name}">分类名称</h2>
+                <p class="category-card__descn" th:text="${cat.description}">分类描述</p>
+                <span class="category-card__more">查看商品 →</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- 无数据：空态提示 -->
+    <p class="empty-hint" th:if="${categories == null or #lists.isEmpty(categories)}">
+        暂无分类数据。请确认数据库已初始化（分类表非空）。
+    </p>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>
