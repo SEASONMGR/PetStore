@@ -64,11 +64,13 @@ CREATE TABLE `product` (
     status        VARCHAR(20)    NOT NULL DEFAULT 'ON_SALE',                   -- ON_SALE / OFF_SHELF
     sort_order    INT            NOT NULL DEFAULT 0,
     created_at    TIMESTAMP      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted       TINYINT(1)     NOT NULL DEFAULT 0,                            -- 逻辑删除：0=未删除 1=已删除（R5）
     CONSTRAINT uk_product_productid UNIQUE (productid),
     CONSTRAINT fk_product_category FOREIGN KEY (category_id) REFERENCES `category` (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE INDEX idx_product_category ON `product` (category_id);
 CREATE INDEX idx_product_status ON `product` (status);
+CREATE INDEX idx_product_deleted ON `product` (deleted);
 
 -- ---------- 4. 商品 SKU（item） ----------
 CREATE TABLE `item` (
