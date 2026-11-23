@@ -1013,3 +1013,255 @@ code {
         padding: 20px 18px;
     }
 }
+
+/* ==========================================================================
+   17. 后台管理（Admin CMS）· T-20261118-25 追加
+   约定：复用上方 :root 变量与 .btn/.field 等既有类，**不另做管理端主题**（用户裁定）。
+        管理端只需在 1280px 下不溢出，不做 390px 响应式（内部使用）。
+   ========================================================================== */
+
+/* ---------- 17.1 页头与工具条 ---------- */
+.admin-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.admin-filter {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    background-color: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+}
+
+.admin-filter .field {
+    min-width: 200px;
+}
+
+.admin-filter__actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* ---------- 17.2 数据表格：斑马纹 + 悬停高亮 ---------- */
+.admin-table-wrap {
+    margin-bottom: 20px;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .93rem;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 12px 14px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.admin-table thead th {
+    background-color: var(--c-surface-alt);
+    color: var(--c-text-soft);
+    font-size: .84rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* 斑马纹 */
+.admin-table tbody tr:nth-child(even) {
+    background-color: #fbf9f5;
+}
+
+/* 悬停高亮 */
+.admin-table tbody tr:hover {
+    background-color: var(--c-primary-light);
+}
+
+/* 末行不再单独去掉边框：border-collapse 下相邻单元格共享边框，
+   单独去 border 会让最后一列残留一条错位短线（已实测放大截图确认）。 */
+
+.admin-table .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.admin-table .mono {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: .88rem;
+    color: var(--c-text-soft);
+    white-space: nowrap;
+}
+
+.admin-sub {
+    display: block;
+    margin-top: 2px;
+    color: var(--c-text-muted);
+    font-size: .82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 28em;
+}
+
+/* 末行单元格不再画底边框：.table-wrap 自身已有 1px 外框，
+   两者叠加时圆角/裁剪会让最后一列残留一条错位短线（已用 CDP 量出并截图确认）。 */
+.admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-empty {
+    padding: 28px 14px;
+    text-align: center;
+    color: var(--c-text-muted);
+}
+
+/* ---------- 17.3 操作按钮：紧凑排列 ---------- */
+.admin-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.btn--sm {
+    min-height: 32px;
+    padding: 5px 12px;
+    font-size: .85rem;
+}
+
+.btn--danger {
+    background-color: #fdecea;
+    color: #8c1d18;
+    border-color: #f5c6c0;
+}
+
+.btn--danger:hover {
+    background-color: #b3261e;
+    border-color: #b3261e;
+    color: #fff;
+}
+
+.btn--danger[disabled],
+.btn--danger:disabled,
+.btn.is-disabled {
+    background-color: var(--c-surface-alt);
+    color: var(--c-text-muted);
+    border-color: var(--c-border);
+    cursor: not-allowed;
+}
+
+.btn.is-disabled:hover,
+.btn--danger[disabled]:hover {
+    background-color: var(--c-surface-alt);
+    color: var(--c-text-muted);
+}
+
+/* ---------- 17.4 状态徽标 ---------- */
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge--on {
+    background-color: var(--c-primary-light);
+    color: var(--c-primary-dark);
+}
+
+.badge--off {
+    background-color: var(--c-surface-alt);
+    color: var(--c-text-muted);
+}
+
+.badge--self {
+    background-color: #e8f0fb;
+    color: #1f4e8c;
+}
+
+/* ---------- 17.5 表单区（复用 .auth-card，仅放宽宽度） ---------- */
+.admin-form {
+    max-width: 820px;
+    margin-bottom: 32px;
+}
+
+.admin-section {
+    margin-top: 8px;
+}
+
+.admin-inline-form {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    align-items: end;
+    gap: 14px;
+    margin-top: 16px;
+    padding: 16px 18px;
+    background-color: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-md);
+}
+
+.admin-inline-form__actions {
+    display: flex;
+    align-items: flex-end;
+}
+
+/* ---------- 17.6 分页 ---------- */
+.pager {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pager__info {
+    color: var(--c-text-soft);
+    font-size: .9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 17.7 窄屏兜底（仅为不溢出，不做完整移动端适配） ---------- */
+@media (max-width: 1024px) {
+    .admin-inline-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}.nav-link--admin {
+    background-color: var(--c-primary);
+    color: #fff;
+}
+
+.nav-link--admin:hover {
+    background-color: var(--c-primary-dark);
+    color: #fff;
+}/* 表格内的次要按钮：给足边框对比，避免在行底色上"消失"成纯文本 */
+.admin-actions .btn--ghost {
+    border-color: #d8d2c4;
+    color: var(--c-text);
+    background-color: var(--c-surface);
+}
+
+.admin-actions .btn--ghost:hover {
+    border-color: var(--c-primary);
+    color: var(--c-primary-dark);
+    background-color: var(--c-primary-light);
+}
+
+/* 与按钮通过 form="id" 关联的表外表单不可见，也不占位 */
+table ~ form[hidden],
+main form[hidden] {
+    display: none;
+}

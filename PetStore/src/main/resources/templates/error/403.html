@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图：error/403 —— 无权访问（后台管理）
+  产出方：AdminInterceptor 抛 AdminForbiddenException → AdminAccessExceptionHandler(@ControllerAdvice)
+  契约：项目/docs/接口契约.md §5.1
+  model 属性（三者均**可空**，模板必须做兜底，做法与 error/404 一致）：
+    status  —— Integer，固定 403
+    message —— String，中文说明，如「该页面仅管理员可访问」
+    path    —— String，被拒绝的请求路径；业务 403 时后端可能不提供
+  说明：
+    1) 结构与配色完全复用现有 error/404.html（.error-box / .error-code / .error-meta），不新设计。
+    2) 已登录时显示当前用户名 + 「切换账号」链接（/account/logout），方便换 admin 账号重试。
+    3) 本页**不做任何鉴权判断**——鉴权在 dev-01 的拦截器里，模板只负责显示。
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 无权访问')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <section class="error-box">
+        <p class="error-code" th:text="${status} ?: 403">403</p>
+        <h1 class="page-title">无权访问</h1>
+        <p class="page-lead">
+            该页面仅限管理员访问。当前账号没有后台管理权限。
+        </p>
+
+        <!-- 已登录时给出一条"换账号重试"的路径，避免用户卡死 -->
+        <p class="page-lead" th:if="${session != null and session.loginUser != null}">
+            你当前登录的账号是
+            <strong th:text="${session.loginUser.username}">用户名</strong>
+            ，如需访问后台，请切换到管理员账号。
+        </p>
+
+        <ul class="error-meta">
+            <li>
+                <span class="error-meta__key">请求路径</span>
+                <code class="error-meta__val" th:text="${path} ?: '（未知）'">（未知）</code>
+            </li>
+            <li>
+                <span class="error-meta__key">拒绝原因</span>
+                <code class="error-meta__val"
+                      th:text="${#strings.isEmpty(message) ? '该页面仅管理员可访问' : message}">该页面仅管理员可访问</code>
+            </li>
+        </ul>
+
+        <p class="error-actions">
+            <a class="btn btn--primary" th:href="@{/catalog}">返回分类总览</a>
+            <a class="btn btn--ghost"
+               th:if="${session != null and session.loginUser != null}"
+               th:href="@{/account/logout}">切换账号</a>
+            <a class="btn btn--ghost"
+               th:if="${session == null or session.loginUser == null}"
+               th:href="@{/account/login}">去登录</a>
+        </p>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>

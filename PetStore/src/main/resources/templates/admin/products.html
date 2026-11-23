@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图：admin/products —— 商品列表（后台）
+  路由：GET /admin/products?page=&keyword=&categoryId=
+  契约：项目/docs/接口契约.md §5.2.1 / §5.4
+  model：products(List<Product>,非空) categories(List<Category>) categoryNames(Map<Integer,String>)
+         page(Integer) totalPages(Integer) keyword(String,可空) selectedCategoryId(Integer,可空)
+         msg/err(String,可空) —— 来自 redirect 的 ?msg= / ?err=
+  交互（T-20261118-25 硬性要求）：
+    1) 所有写操作均为 POST 表单，不用 <a href> 改数据
+    2) 删除为破坏性操作，加 confirm 二次确认
+    3) HTML 不允许 <form> 嵌套：表格里的按钮用 form="表单id" 关联表格外的独立表单
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 后台商品管理')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <div class="page-head admin-head">
+        <div>
+            <h1 class="page-title">商品管理</h1>
+            <p class="page-lead">共 <strong th:text="${#lists.size(products)}">0</strong> 条记录，第
+                <strong th:text="${page}">1</strong> / <strong th:text="${totalPages}">1</strong> 页</p>
+        </div>
+        <a class="btn btn--primary" th:href="@{/admin/product/new}">新增商品</a>
+    </div>
+
+    <!-- 一次性提示：来自 redirect 的 ?msg= / ?err=（契约 §5 通用约定） -->
+    <p class="alert alert--ok" th:if="${param.msg != null or msg != null}"
+       th:text="${param.msg != null ? param.msg : msg}">操作成功</p>
+    <p class="alert alert--error" th:if="${param.err != null or err != null}"
+       th:text="${param.err != null ? param.err : err}">操作失败</p>
+
+    <!-- 搜索与筛选：GET 表单，不改变数据 -->
+    <form class="admin-filter" method="get" th:action="@{/admin/products}">
+        <div class="field">
+            <label class="field-label" for="keyword">关键词</label>
+            <input class="field-input" type="text" id="keyword" name="keyword"
+                   th:value="${keyword}" placeholder="商品名 / 商品编号">
+        </div>
+        <div class="field">
+            <label class="field-label" for="categoryId">分类</label>
+            <select class="field-input" id="categoryId" name="categoryId">
+                <option value="">全部分类</option>
+                <option th:each="c : ${categories}"
+                        th:value="${c.id}"
+                        th:selected="${selectedCategoryId != null and selectedCategoryId == c.id}"
+                        th:text="${c.name}">分类</option>
+            </select>
+        </div>
+        <div class="admin-filter__actions">
+            <button class="btn btn--primary" type="submit">筛选</button>
+            <a class="btn btn--ghost" th:href="@{/admin/products}">重置</a>
+        </div>
+    </form>
+
+    <!-- ========== 表格外的一次性操作表单（避免 form 嵌套） ========== -->
+    <!-- 上架/下架：每个商品一个独立表单，按钮用 form 属性关联 -->
+    <div th:each="p : ${products}" th:remove="tag">
+        <form th:id="'toggle-' + ${p.id}" method="post" hidden
+              th:action="@{/admin/product/{id}/toggle(id=${p.id})}"></form>
+        <form th:id="'delete-' + ${p.id}" method="post" hidden
+              th:action="@{/admin/product/{id}/delete(id=${p.id})}"></form>
+    </div>
+
+    <div class="table-wrap admin-table-wrap">
+        <table class="admin-table">
+            <caption class="visually-hidden">商品列表，含编辑、上下架与删除操作</caption>
+            <thead>
+            <tr>
+                <th scope="col">编号</th>
+                <th scope="col">分类</th>
+                <th scope="col">名称</th>
+                <th scope="col" class="num">参考价</th>
+                <th scope="col">状态</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${products}">
+                <td class="mono" th:text="${p.productid}">DOG-001</td>
+                <td th:text="${categoryNames[p.categoryId] != null ? categoryNames[p.categoryId] : '（未知）'}">犬类</td>
+                <td>
+                    <span th:text="${p.name}">商品名</span>
+                    <span class="admin-sub" th:text="${p.description}">描述</span>
+                </td>
+                <td class="num" th:text="${p.listPrice != null ? '￥' + #numbers.formatDecimal(p.listPrice,1,2) : '—'}">￥0.00</td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${p.status == 'ON_SALE'} ? 'badge--on' : 'badge--off'"
+                          th:text="${p.status == 'ON_SALE'} ? '在售' : '下架'">在售</span>
+                </td>
+                <td class="admin-actions">
+                    <a class="btn btn--sm btn--ghost"
+                       th:href="@{/admin/product/{id}/edit(id=${p.id})}">编辑</a>
+                    <button class="btn btn--sm btn--ghost" type="submit"
+                            th:form="'toggle-' + ${p.id}"
+                            th:text="${p.status == 'ON_SALE'} ? '下架' : '上架'">下架</button>
+                    <button class="btn btn--sm btn--danger" type="submit"
+                            th:form="'delete-' + ${p.id}"
+                            onclick="return confirm('确认删除该商品？删除后前台将不再显示，但数据仍保留（逻辑删除）。');">删除</button>
+                </td>
+            </tr>
+            <tr th:if="${products == null or #lists.isEmpty(products)}">
+                <td class="admin-empty" colspan="6">没有符合条件的商品。</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页（契约 §5.3：page 从 1 开始，totalPages 最小 1） -->
+    <nav class="pager" aria-label="分页导航" th:if="${totalPages != null and totalPages > 1}">
+        <a class="btn btn--sm btn--ghost"
+           th:if="${page > 1}"
+           th:href="@{/admin/products(page=${page - 1}, keyword=${keyword}, categoryId=${selectedCategoryId})}">上一页</a>
+        <span class="btn btn--sm btn--ghost is-disabled" th:if="${page <= 1}">上一页</span>
+        <span class="pager__info" th:text="${page} + ' / ' + ${totalPages}">1 / 1</span>
+        <a class="btn btn--sm btn--ghost"
+           th:if="${page < totalPages}"
+           th:href="@{/admin/products(page=${page + 1}, keyword=${keyword}, categoryId=${selectedCategoryId})}">下一页</a>
+        <span class="btn btn--sm btn--ghost is-disabled" th:if="${page >= totalPages}">下一页</span>
+    </nav>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图：admin/product-form —— 商品新建 / 编辑（同一视图）
+  路由：GET /admin/product/new、GET /admin/product/{id}/edit；提交 POST /admin/product/save
+  契约：项目/docs/接口契约.md §5.2.2 / §5.4
+  model：product(Product,非空；新建时 id==null) categories(List<Category>,非空)
+         items(List<Item>,非空；新建时为空列表) isNew(Boolean,非空) err(String,可空)
+  提交参数（契约 §5.4）：id(Integer，空=新建) productid categoryId name description
+         imagePath listPrice(BigDecimal) sortOrder(Integer)
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 商品编辑')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <nav class="breadcrumb" aria-label="面包屑导航">
+        <a th:href="@{/admin/products}">商品管理</a>
+        <span class="breadcrumb__sep" aria-hidden="true">/</span>
+        <span class="breadcrumb__current" th:text="${isNew} ? '新增商品' : '编辑商品'">新增商品</span>
+    </nav>
+
+    <div class="page-head">
+        <h1 class="page-title" th:text="${isNew} ? '新增商品' : '编辑商品'">新增商品</h1>
+    </div>
+
+    <p class="alert alert--error" th:if="${err != null}" th:text="${err}">校验失败</p>
+    <p class="alert alert--ok" th:if="${param.msg != null}" th:text="${param.msg}">已保存</p>
+
+    <form class="auth-card admin-form" method="post" th:action="@{/admin/product/save}">
+        <!-- id 为空 = 新建（契约 §5.4） -->
+        <input type="hidden" name="id" th:value="${product.id}">
+
+        <div class="field-row">
+            <div class="field">
+                <label class="field-label" for="productid">商品编号</label>
+                <input class="field-input" type="text" id="productid" name="productid"
+                       th:value="${product.productid}" placeholder="如 DOG-005" required>
+                <p class="field-hint">业务编号，前台不用于 URL，仅作展示与检索。</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="categoryId">分类</label>
+                <select class="field-input" id="categoryId" name="categoryId" required>
+                    <option value="">请选择分类</option>
+                    <option th:each="c : ${categories}"
+                            th:value="${c.id}"
+                            th:selected="${product.categoryId != null and product.categoryId == c.id}"
+                            th:text="${c.name}">分类</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="name">商品名称</label>
+            <input class="field-input" type="text" id="name" name="name"
+                   th:value="${product.name}" required>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="description">描述</label>
+            <textarea class="field-input" id="description" name="description" rows="3"
+                      th:text="${product.description}"></textarea>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="imagePath">图片路径</label>
+            <input class="field-input" type="text" id="imagePath" name="imagePath"
+                   th:value="${product.imagePath}" placeholder="/images/products/xxx.png">
+            <p class="field-hint">完整路径，含 <code>/images/products/</code> 前缀（契约 §四）。</p>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label class="field-label" for="listPrice">参考价（元）</label>
+                <input class="field-input" type="number" step="0.01" min="0" id="listPrice" name="listPrice"
+                       th:value="${product.listPrice}">
+            </div>
+            <div class="field">
+                <label class="field-label" for="sortOrder">排序号</label>
+                <input class="field-input" type="number" id="sortOrder" name="sortOrder"
+                       th:value="${product.sortOrder}">
+            </div>
+        </div>
+
+        <p class="field-hint" th:if="${isNew}">
+            新建商品的上下架状态默认为「在售」（契约 §5.4），保存后可在列表中切换。
+        </p>
+        <p class="field-hint" th:unless="${isNew}">
+            当前状态：
+            <strong th:text="${product.status == 'ON_SALE'} ? '在售' : '下架'">在售</strong>
+            ，上下架请在列表中操作。
+        </p>
+
+        <div class="auth-actions">
+            <button class="btn btn--primary" type="submit"
+                    th:text="${isNew} ? '创建商品' : '保存修改'">保存</button>
+            <a class="btn btn--ghost" th:href="@{/admin/products}">返回列表</a>
+        </div>
+    </form>
+
+    <!-- ========== SKU（库存与价格）：仅编辑态显示，保存走独立 POST ========== -->
+    <section class="admin-section" th:unless="${isNew}">
+        <h2 class="section-title">规格与库存</h2>
+
+        <div class="table-wrap admin-table-wrap">
+            <table class="admin-table">
+                <caption class="visually-hidden">该商品的 SKU 列表</caption>
+                <thead>
+                <tr>
+                    <th scope="col">SKU 编号</th>
+                    <th scope="col">规格名</th>
+                    <th scope="col" class="num">单价</th>
+                    <th scope="col" class="num">库存</th>
+                    <th scope="col">状态</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="it : ${items}">
+                    <td class="mono" th:text="${it.itemid}">DOG-001-01</td>
+                    <td th:text="${it.name}">规格</td>
+                    <td class="num" th:text="${it.listPrice != null ? '￥' + #numbers.formatDecimal(it.listPrice,1,2) : '—'}">￥0.00</td>
+                    <td class="num" th:text="${it.quantity}">0</td>
+                    <td th:text="${it.status == 'INSTOCK' ? '有货' : (it.status == 'OUTOFSTOCK' ? '缺货' : '已下架')}">有货</td>
+                </tr>
+                <tr th:if="${items == null or #lists.isEmpty(items)}">
+                    <td class="admin-empty" colspan="5">该商品暂无 SKU。可用下方表单新增一条。</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 新增/编辑单条 SKU：POST /admin/product/{id}/item/save（契约 §5.4） -->
+        <form class="admin-inline-form" method="post"
+              th:action="@{/admin/product/{id}/item/save(id=${product.id})}">
+            <div class="field">
+                <label class="field-label" for="itemid">SKU 编号</label>
+                <input class="field-input" type="text" id="itemid" name="itemid" placeholder="如 DOG-005-01">
+            </div>
+            <div class="field">
+                <label class="field-label" for="itemName">规格名</label>
+                <input class="field-input" type="text" id="itemName" name="name" placeholder="如 5kg 装">
+            </div>
+            <div class="field">
+                <label class="field-label" for="itemPrice">单价（元）</label>
+                <input class="field-input" type="number" step="0.01" min="0" id="itemPrice" name="listPrice">
+            </div>
+            <div class="field">
+                <label class="field-label" for="itemQty">库存</label>
+                <input class="field-input" type="number" min="0" id="itemQty" name="quantity">
+            </div>
+            <input type="hidden" name="itemId" value="">
+            <div class="admin-inline-form__actions">
+                <button class="btn btn--primary btn--sm" type="submit">保存规格</button>
+            </div>
+        </form>
+        <p class="field-hint">
+            说明：本表单只提交契约 §5.4 定义的字段（<code>itemId</code> / <code>itemid</code> /
+            <code>name</code> / <code>listPrice</code> / <code>quantity</code>）。
+            修改既有 SKU 时需带 <code>itemId</code>，当前页面未提供逐行编辑入口，避免与后端未定义的行为冲突。
+        </p>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>
