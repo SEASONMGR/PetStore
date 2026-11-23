@@ -2,6 +2,7 @@ package org.example.petstore.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -41,4 +42,12 @@ public class Product {
     private Integer sortOrder;
 
     private LocalDateTime createdAt;
+
+    /**
+     * 逻辑删除标记（需求裁定 R5）：0=未删除、1=已删除。
+     * <p>标注 {@link TableLogic} 后，MyBatis Plus 的普通查询会自动追加 {@code deleted = 0}，
+     * {@code deleteById} 会被改写为 {@code UPDATE product SET deleted = 1}，不做物理删除。</p>
+     */
+    @TableLogic
+    private Integer deleted;
 }

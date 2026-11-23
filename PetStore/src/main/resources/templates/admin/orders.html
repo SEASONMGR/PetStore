@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图：admin/orders —— 订单列表（后台）
+  路由：GET /admin/orders
+  契约：项目/docs/接口契约.md §5.2.4 / §5.4
+  model：orders(List<Orders>,非空) statusNames(Map<Integer,String>,非空)
+         usernames(Map<Integer,String>,非空) msg/err(String,可空)
+  要点：
+    1) 订单只能改状态，明细不可改（需求裁定 R4）
+    2) 「发货」会扣减库存，库存不足时后端整体拒绝并在 ?err= 给出原因（契约 §5.4）
+    3) 状态 id：1=待付款 2=已完成 3=已发货 4=已取消（data.sql 固定值）
+    4) 写操作均为 POST；取消为破坏性操作加 confirm；表单不嵌套
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 后台订单管理')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <div class="page-head admin-head">
+        <div>
+            <h1 class="page-title">订单管理</h1>
+            <p class="page-lead">共 <strong th:text="${#lists.size(orders)}">0</strong> 笔订单。发货将扣减对应 SKU 库存，库存不足会被整体拒绝。</p>
+        </div>
+    </div>
+
+    <p class="alert alert--ok" th:if="${param.msg != null or msg != null}"
+       th:text="${param.msg != null ? param.msg : msg}">操作成功</p>
+    <p class="alert alert--error" th:if="${param.err != null or err != null}"
+       th:text="${param.err != null ? param.err : err}">操作失败</p>
+
+    <!-- 表格外的一次性操作表单，避免 form 嵌套 -->
+    <div th:each="o : ${orders}" th:remove="tag">
+        <form th:id="'ship-' + ${o.id}" method="post" hidden
+              th:action="@{/admin/order/{id}/ship(id=${o.id})}"></form>
+        <form th:id="'cancel-' + ${o.id}" method="post" hidden
+              th:action="@{/admin/order/{id}/cancel(id=${o.id})}"></form>
+    </div>
+
+    <div class="table-wrap admin-table-wrap">
+        <table class="admin-table">
+            <caption class="visually-hidden">订单列表，含发货与取消操作</caption>
+            <thead>
+            <tr>
+                <th scope="col">单号</th>
+                <th scope="col">下单人</th>
+                <th scope="col" class="num">金额</th>
+                <th scope="col">状态</th>
+                <th scope="col">下单日期</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${orders}">
+                <td class="mono" th:text="${o.orderid}">1000</td>
+                <td th:text="${usernames[o.accountId] != null ? usernames[o.accountId] : '（未知用户）'}">alice</td>
+                <td class="num" th:text="${o.totalPrice != null ? '￥' + #numbers.formatDecimal(o.totalPrice,1,2) : '—'}">￥0.00</td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${o.statusId == 3 ? 'badge--on' : (o.statusId == 4 ? 'badge--off' : '')}"
+                          th:text="${statusNames[o.statusId] != null ? statusNames[o.statusId] : '（未知状态）'}">待付款</span>
+                </td>
+                <td th:text="${o.orderDate}">2026-11-01</td>
+                <td class="admin-actions">
+                    <!-- 已发货(3)/已取消(4) 不再提供「发货」；仅待付款(1)/已完成(2) 可发货 -->
+                    <button th:if="${o.statusId == 1 or o.statusId == 2}"
+                            class="btn btn--sm btn--primary" type="submit"
+                            th:form="'ship-' + ${o.id}"
+                            onclick="return confirm('确认发货？该操作将扣减对应 SKU 库存，库存不足会被拒绝。');">发货</button>
+                    <button th:if="${o.statusId != 1 and o.statusId != 2}"
+                            class="btn btn--sm btn--ghost" type="button" disabled
+                            title="仅「待付款」「已完成」状态的订单可发货">发货</button>
+
+                    <!-- 已发货订单不可取消（契约 §5.4） -->
+                    <button th:if="${o.statusId != 3 and o.statusId != 4}"
+                            class="btn btn--sm btn--danger" type="submit"
+                            th:form="'cancel-' + ${o.id}"
+                            onclick="return confirm('确认取消该订单？取消后不可恢复。');">取消</button>
+                    <button th:if="${o.statusId == 3}"
+                            class="btn btn--sm btn--danger" type="button" disabled
+                            title="已发货订单不可取消（契约 §5.4）">取消</button>
+                    <button th:if="${o.statusId == 4}"
+                            class="btn btn--sm btn--danger" type="button" disabled
+                            title="订单已取消">取消</button>
+                </td>
+            </tr>
+            <tr th:if="${orders == null or #lists.isEmpty(orders)}">
+                <td class="admin-empty" colspan="6">暂无订单。</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="field-hint">
+        说明：订单明细不可编辑（需求裁定 R4）。「发货」成功后订单状态变为「已发货」并扣减库存，
+        任一 SKU 库存不足则整单拒绝、状态与库存保持不变（契约 §5.4）。
+    </p>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>

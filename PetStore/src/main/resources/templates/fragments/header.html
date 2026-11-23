@@ -41,6 +41,11 @@
 
             <!-- 已登录：显示用户名与退出入口 -->
             <span class="nav-user" th:if="${session != null and session.loginUser != null}">
+                <!-- 后台管理入口：仅 loginUser.admin == true 可见（T-20261118-25 要求 1）
+                     用 Thymeleaf session 判断，不写 JS；admin 为 null 时按 false 处理（安全默认，契约 §5.1） -->
+                <a class="nav-link nav-link--auth nav-link--admin"
+                   th:if="${session.loginUser.admin != null and session.loginUser.admin}"
+                   th:href="@{/admin/products}">后台管理</a>
                 <span class="nav-user__label">你好，</span>
                 <span class="nav-user__name" th:text="${session.loginUser.username}">用户</span>
                 <a class="nav-link nav-link--auth" th:href="@{/account/logout}">退出</a>

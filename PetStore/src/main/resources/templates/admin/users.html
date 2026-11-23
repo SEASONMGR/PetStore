@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<!--
+  视图：admin/users —— 用户列表（后台）
+  路由：GET /admin/users
+  契约：项目/docs/接口契约.md §5.2.3 / §5.4
+  model：accounts(List<Account>,非空) currentUserId(Integer,非空) initialPassword(String,可空)
+         msg/err(String,可空)
+  要点：
+    1) Account.password 后端已置 null（契约 §5.2.3 警告），本模板**不渲染任何口令字段**
+    2) 防锁死：当行 id == currentUserId 时，禁用「停用」按钮（契约 §5.4 硬性）
+    3) 本系统不提供"取消管理员"操作，故无降权入口（契约 §5.4）
+    4) 所有写操作为 POST；停用为破坏性操作加 confirm；表单不嵌套，用 form 属性关联
+-->
+<head th:replace="~{fragments/head :: head('宠物商店 · 后台用户管理')}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main class="container page">
+    <div class="page-head admin-head">
+        <div>
+            <h1 class="page-title">用户管理</h1>
+            <p class="page-lead">共 <strong th:text="${#lists.size(accounts)}">0</strong> 个账号</p>
+        </div>
+    </div>
+
+    <p class="alert alert--ok" th:if="${param.msg != null or msg != null}"
+       th:text="${param.msg != null ? param.msg : msg}">操作成功</p>
+    <p class="alert alert--error" th:if="${param.err != null or err != null}"
+       th:text="${param.err != null ? param.err : err}">操作失败</p>
+
+    <!-- 密码重置后的一次性明文回显（仅该次请求存在，刷新即消失，契约 §5.2.3） -->
+    <p class="alert alert--ok" th:if="${initialPassword != null}">
+        密码已重置为：<code th:text="${initialPassword}">PetStore@123</code>　请通知用户重新登录。
+    </p>
+
+    <!-- 表格外的一次性操作表单，避免 form 嵌套 -->
+    <div th:each="a : ${accounts}" th:remove="tag">
+        <form th:id="'reset-' + ${a.id}" method="post" hidden
+              th:action="@{/admin/user/{id}/reset-password(id=${a.id})}"></form>
+        <form th:id="'status-' + ${a.id}" method="post" hidden
+              th:action="@{/admin/user/{id}/toggle-status(id=${a.id})}"></form>
+    </div>
+
+    <div class="table-wrap admin-table-wrap">
+        <table class="admin-table">
+            <caption class="visually-hidden">用户账号列表</caption>
+            <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">用户名</th>
+                <th scope="col">邮箱</th>
+                <th scope="col">管理员</th>
+                <th scope="col">状态</th>
+                <th scope="col">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${accounts}">
+                <td class="mono" th:text="${a.id}">1</td>
+                <td>
+                    <span th:text="${a.username}">admin</span>
+                    <span class="badge badge--self" th:if="${currentUserId != null and currentUserId == a.id}">当前登录</span>
+                </td>
+                <td th:text="${a.email}">a@b.c</td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${a.admin} ? 'badge--on' : 'badge--off'"
+                          th:text="${a.admin} ? '是' : '否'">是</span>
+                </td>
+                <td>
+                    <span class="badge"
+                          th:classappend="${a.status == 'ACTIVE'} ? 'badge--on' : 'badge--off'"
+                          th:text="${a.status == 'ACTIVE'} ? '启用' : '停用'">启用</span>
+                </td>
+                <td class="admin-actions">
+                    <button class="btn btn--sm btn--ghost" type="submit"
+                            th:form="'reset-' + ${a.id}"
+                            onclick="return confirm('确认重置该用户的密码？重置后为固定初始密码，需通知用户重新登录。');">重置密码</button>
+
+                    <!-- 防锁死：不允许停用自己 -->
+                    <button th:if="${currentUserId == null or currentUserId != a.id}"
+                            class="btn btn--sm btn--danger" type="submit"
+                            th:form="'status-' + ${a.id}"
+                            th:text="${a.status == 'ACTIVE'} ? '停用' : '启用'"
+                            onclick="return confirm('确认变更该账号的启用状态？');">停用</button>
+                    <button th:if="${currentUserId != null and currentUserId == a.id}"
+                            class="btn btn--sm btn--danger" type="button" disabled
+                            title="不能停用自己的账号（契约 §5.4 防锁死）">停用</button>
+                </td>
+            </tr>
+            <tr th:if="${accounts == null or #lists.isEmpty(accounts)}">
+                <td class="admin-empty" colspan="6">暂无用户。</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p class="field-hint">
+        说明：本系统不提供「取消管理员」操作，故不存在把自己降权的入口；管理员不得停用自己（后端双重校验）。
+        口令为实验用明文（见契约 §2.3），本页不显示任何口令字段。
+    </p>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/petstore.js}"></script>
+</body>
+</html>
