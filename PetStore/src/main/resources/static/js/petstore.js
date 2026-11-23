@@ -11,29 +11,52 @@
 
     /* ------------------------------------------------------------------
      * 1. 顶部导航高亮
-     *    规则：/category 与 /product 归入「分类」，/catalog 与根路径归入「首页」。
-     *    页面上的 .nav-link 带 data-nav="catalog|category" 供匹配。
+     *    规则（T-20261113-17 修正后）：
+     *      /catalog             → 首页
+     *      /catalog/{id}        → 分类（此前被误判为首页，已修）
+     *      /category、/product  → 分类
+     *      /account/login       → 登录（高亮「登录」入口自身）
+     *      /account/register    → 注册（高亮「注册」入口自身）
+     *      /account/**、其它     → 不高亮任何主导航项（此前默认落到"首页"，已修）
+     *    匹配方式：优先 data-nav；登录/注册入口没有 data-nav，改按 href 前缀匹配。
      * ------------------------------------------------------------------ */
     function highlightNav() {
-        var links = document.querySelectorAll(".nav-link[data-nav]");
+        var links = document.querySelectorAll(".nav-link");
         if (!links.length) {
             return;
         }
 
         var path = (window.location.pathname || "/").toLowerCase();
-        var current = "catalog";
+        var current = "";
 
-        if (path.indexOf("/product") === 0) {
-            // 商品详情属于分类体系的一部分
+        if (path.indexOf("/account/login") === 0) {
+            current = "login";
+        } else if (path.indexOf("/account/register") === 0) {
+            current = "register";
+        } else if (path.indexOf("/product") === 0 || path.indexOf("/category") === 0) {
+            // 商品详情与分类列表都属于分类体系
             current = "category";
-        } else if (path.indexOf("/category") === 0) {
-            current = "category";
-        } else if (path.indexOf("/catalog") === 0) {
+        } else if (path === "/catalog" || path === "/catalog/" || path === "/") {
             current = "catalog";
+        } else if (path.indexOf("/catalog/") === 0) {
+            // /catalog/{id} 是某分类下的商品列表，不是首页
+            current = "category";
         }
 
         Array.prototype.forEach.call(links, function (link) {
-            var isCurrent = link.getAttribute("data-nav") === current;
+            var htmlLink = link.tagName === "A" ? link : null;
+            var nav = link.getAttribute("data-nav");
+            var href = htmlLink ? (htmlLink.getAttribute("href") || "").toLowerCase() : "";
+            var isCurrent = false;
+
+            if (nav) {
+                isCurrent = nav === current;
+            } else if (current === "login") {
+                isCurrent = href.indexOf("/account/login") === 0;
+            } else if (current === "register") {
+                isCurrent = href.indexOf("/account/register") === 0;
+            }
+
             link.classList.toggle("is-active", isCurrent);
             if (isCurrent) {
                 link.setAttribute("aria-current", "page");
